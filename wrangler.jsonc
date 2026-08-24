@@ -1,0 +1,37 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "seekers-bot",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-08-16",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	// No route configured yet — deploys to the default workers.dev URL.
+	// Copy that URL into the Discord Developer Portal's "Interactions
+	// Endpoint URL" field (General Information tab) after the first deploy.
+	// A custom domain can be added later the same way seekers-tracker's is.
+	"d1_databases": [
+		{
+			// Same database as seekers-tracker (PLAN.md §8/§11 Phase 9) — this
+			// repo NEVER runs migrations against it (no migrations_dir here on
+			// purpose) and every query in src/ must be a read. Schema and
+			// migrations are owned solely by seekers-tracker.
+			"binding": "DATABASE",
+			"database_name": "seekers-of-souls",
+			"database_id": "77583c9c-c654-4934-8782-ed4d1265771f"
+		}
+	],
+	"observability": {
+		"enabled": true
+	}
+	/**
+	 * Environment Variables / Secrets
+	 * DISCORD_PUBLIC_KEY is required at runtime to verify interaction
+	 * signatures — set via `wrangler secret put DISCORD_PUBLIC_KEY` for
+	 * production, `.dev.vars` locally. See README.md.
+	 */
+}

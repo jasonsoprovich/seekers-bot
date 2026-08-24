@@ -1,0 +1,10 @@
+# Copy to .dev.vars (gitignored) for local `wrangler dev`.
+
+# Discord Developer Portal -> your app -> General Information -> Public Key
+DISCORD_PUBLIC_KEY=
+
+# Only needed to run `npm run register-commands` (not read by the Worker
+# itself) - Discord Developer Portal -> your app -> Bot tab -> Token, and
+# General Information -> Application ID.
+DISCORD_APPLICATION_ID=
+DISCORD_BOT_TOKEN=
