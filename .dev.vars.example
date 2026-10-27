@@ -1,10 +1,18 @@
-# Copy to .dev.vars (gitignored) for local `wrangler dev`.
+# Copy to .dev.vars (gitignored) for local `wrangler dev` and the
+# register-commands script.
 
 # Discord Developer Portal -> your app -> General Information -> Public Key
 DISCORD_PUBLIC_KEY=
 
-# Only needed to run `npm run register-commands` (not read by the Worker
-# itself) - Discord Developer Portal -> your app -> Bot tab -> Token, and
-# General Information -> Application ID.
+# Discord (Developer Mode on) -> right-click the server icon -> Copy Server ID
+DISCORD_GUILD_ID=
+# Server Settings -> Roles -> right-click "Seeker" -> Copy Role ID
+SEEKER_ROLE_ID=
+# Comma-separated: the "Orc Pawn" and "Guest" role IDs
+DENIED_ROLE_IDS=
+
+# Only needed by `npm run register-commands` (never read by the Worker, never
+# uploaded) - Developer Portal -> General Information -> Application ID, and
+# Bot tab -> Reset Token.
 DISCORD_APPLICATION_ID=
 DISCORD_BOT_TOKEN=

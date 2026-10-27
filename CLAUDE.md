@@ -1,93 +1,72 @@
 # seekers-bot
 
-Discord slash-command bot for Seekers of Souls: a Cloudflare Worker
-(Interactions Endpoint, not a gateway bot), sibling repo to
-**seekers-tracker** (`../seekers-tracker` — the guild's Next.js/Cloudflare
-website, which owns the D1 schema this repo reads from). Read that repo's
-`CLAUDE.md` too for the full three-repo picture; this file is the bot's own
-half. `README.md` in this repo has setup/deploy steps — this file is
-roadmap/gotchas, not a setup guide.
+Read-only Discord slash-command bot for Seekers of Souls: a Cloudflare
+Worker (Interactions Endpoint, not a gateway bot), sibling repo to
+**seekers-tracker** (`../seekers-tracker` — the guild's website, which owns
+the D1 schema this repo reads from). Read that repo's `CLAUDE.md` for the
+full three-repo picture. `README.md` here has the commands, access rules and
+setup/deploy steps; this file is decisions and gotchas.
 
-## ⚠ Read `../PLAN.md` first
+## Ground rules (leader decisions, 2026-10-27)
 
-**`../PLAN.md` is the authoritative plan.** §8 has the design rationale for
-this bot (why a Worker, the read-budget constraint, the passive-channel-
-reading caveat). §11 Phase 9 is this repo's task list (tagged `[B]`).
+- **Informational only.** Every command is a read. Adding/editing mains,
+  alts and mules happens on the website, never here. `src/db.ts` refuses
+  any non-`SELECT` statement — don't loosen it.
+- **This repo never owns schema or migrations.** No `migrations_dir` in
+  `wrangler.jsonc` on purpose.
+- **Every reply is ephemeral** and sends `allowed_mentions: { parse: [] }`.
+- **Access = website's rule**: in the guild, has Seeker, has neither Orc Pawn
+  nor Guest (`src/access.ts`; IDs are secrets, missing config fails closed).
+  Any member may see any other member's EPGP.
+- **Only active** characters (`characters.status`) on active accounts
+  (`players.status`), NoLooter hidden — same as `/roster`'s default view.
+- Dropped from the old SOS-Bot (khandyman/SOS-Bot, Python, MySQL on a VPS):
+  `/find_all_mains`, add/edit/delete character, and respawn timers.
 
-**This repo never owns database schema or migrations** — `seekers-tracker`
-does. `wrangler.jsonc`'s D1 binding deliberately has no `migrations_dir`.
-Every query here must be a read.
+## Data sources
 
-## Stack
+- Character grouping: `characters.player_id` → `players`.
+- `/priority` self-lookup: the invoker's Discord user ID → `players.discord_id`
+  (seeded from Toryn's bot dump, so most members match without ever logging
+  in; a new member is linked on first website login).
+- EP/GP/priority: **`player_epgp_totals`** only — the materialized standings
+  table seekers-tracker refreshes on every ledger write. Never aggregate
+  `ep_ledger`/`gp_ledger` here; that's both a read-budget problem and a
+  second copy of EPGP math that would drift.
+- "Raided in the last N days" uses `max(characters.last_activity_at)` per
+  account, NOT `player_epgp_totals.last_activity_at` — the latter counts
+  decay rows, so everyone looks active right after a decay.
+- Class IDs → names are copied in `src/format.ts` from seekers-tracker's
+  `src/lib/eq/enums.ts`. Keep in sync.
 
-- Cloudflare Worker, plain `fetch` handler (no framework — Workers can't run
-  Express/Node's HTTP server; `discord-interactions`' `verifyKey` function
-  is used directly, not its Express-only `verifyKeyMiddleware`)
-- `discord-interactions` for Ed25519 request-signature verification and
-  interaction/response type constants
-- D1 binding `DATABASE`, same database as `seekers-tracker`
-- No auth of its own — Discord's signature verification *is* the auth
+## Gotchas
 
-## Commands
+- Discord caps a message at 2000 chars: standings is limited to 25 rows of
+  48 chars (class abbreviations keep a row from wrapping on phones).
+  `reply()` hard-truncates as a last resort, which would break a code block.
+- Each project's local Miniflare D1 state is directory-scoped; local runs
+  must `--persist-to ../seekers-tracker/.wrangler/state` (the smoke script
+  does) or they see an empty DB.
+- Commands are **guild-scoped** (the register script requires
+  `DISCORD_GUILD_ID`): guild commands only exist in that server, which is
+  what keeps them out of DMs. Changes show up instantly; global commands
+  wouldn't.
+- Discord gives 3s to answer. Every command is 1-4 indexed queries on small
+  tables, answered synchronously — no deferred responses needed. If a slow
+  command is ever added, reply type 5 (deferred) + a follow-up via
+  `ctx.waitUntil`.
 
-```bash
-npm run dev                 # wrangler dev, local D1 (empty until you --persist-to another project's state dir)
-npm run deploy               # wrangler deploy
-npm run register-commands    # push src/commands.ts to Discord (needs DISCORD_APPLICATION_ID/DISCORD_BOT_TOKEN — see README.md)
-npm run typecheck            # tsc --noEmit
-```
+## Status
 
-## Roadmap / status
-
-**Phase 9 tasks 9.1-9.4 complete as of 2026-08-24** (repo scaffolded this
-session). 9.5 (whether passive channel reading for main/alt registration
-must be preserved — PLAN.md §8) is a leadership decision, not a code task,
-and still open.
-
-- `src/index.ts` — the fetch handler: verifies every request's
-  `X-Signature-Ed25519`/`X-Signature-Timestamp` via `verifyKey` before
-  touching the body, answers Discord's `PING` handshake, and routes
-  `APPLICATION_COMMAND` interactions by `data.name`.
-- `src/lookup.ts` — `/lookup_characters`'s query logic. Resolves a name to
-  `characters.player_id` (100% backfilled since `seekers-tracker`'s Phase
-  3), then lists every character sharing that player ordered
-  `char_priority` (main 0, alt 1, mule 2) then name — same shape Toryn's
-  old `SOS-Bot` produced by grouping on `discord_id`. An exact
-  case-insensitive match short-circuits the `LIKE` search; multiple
-  substring matches report the candidate names rather than guessing; an
-  unlinked character (`player_id` NULL — PLAN.md §16, a known pre-Phase-10
-  gap) reports itself alone instead of erroring.
-- `src/commands.ts` — command definitions, imported by both the runtime
-  handler and `scripts/register-commands.ts`, so they can't drift apart.
-  **Add a new command here first**, then handle it in `index.ts`, then
-  re-run `npm run register-commands` — Discord does not pick up command
-  changes on its own.
-
-**Verified this session** (not just `tsc`): generated a real Ed25519
-keypair with Node's `crypto` module and drove `wrangler dev` directly over
-HTTP — a correctly-signed `PING` returns `PONG`, a forged signature gets
-401, and (pointing local `wrangler dev` at `seekers-tracker`'s own local D1
-state via `--persist-to ../seekers-tracker/.wrangler/state`, since each
-project's local Miniflare state is directory-scoped by default and isn't
-shared automatically just because `wrangler.jsonc` names the same
-`database_id`) `/lookup_characters Khrathak` correctly returns
-Khrathak/Beguilez/Tyvalus/Valerion/Vault grouped together, main first — the
-same real main-alt-pair group `seekers-tracker`'s own verify harness
-fixture (Phase 3.12) already exercises. **Not verified against a real
-Discord round trip** — this session has no Discord application credentials
-(public key / bot token / application id) to register a live command or
-receive a real interaction POST; `DISCORD_PUBLIC_KEY` in this repo's
-`.dev.vars` is reset back to blank (see `.dev.vars.example`) after testing,
-not left holding the throwaway test keypair.
-
-**Not yet done**: no real deploy (no Cloudflare Worker created for this
-name, no Interactions Endpoint URL registered in the Discord Developer
-Portal). `worker-configuration.d.ts` is hand-written, not `wrangler
-types`-generated, for the same reason — regenerate via `npm run cf-typegen`
-once this Worker actually exists and delete that file's disclaimer comment.
-
-**Explicitly out of scope for this repo**: anything requiring passive
-channel reading (harvesting main/alt registrations from message history,
-which Toryn's old bot did) — Workers can't hold a gateway WebSocket open.
-If leadership decides that must be preserved (§9.5), it needs a separate,
-persistently-hosted service; don't try to bolt it onto this Worker.
+- **2026-10-27**: rebuilt as the read-only v1 (`/lookup_characters`,
+  `/whois`, `/priority`, `/standings`, name autocomplete, role gating).
+  Verified with `npm run smoke` against local D1: signature (forged → 401),
+  guild/role/denied-role/DM gating, autocomplete (incl. denied), lookups by
+  main and alt, ambiguous/unknown/markdown/SQL-ish input, NoLooter hidden,
+  priority by name/alt/self (linked + unlinked), whois, standings filters,
+  25-row length check. **Not yet** run against real Discord: needs the new
+  Discord application (the old bot's app isn't ours), secrets, a deploy to
+  `bot.seekersofsouls.com`, and command registration — see README.
+- Out of scope for a Worker: anything needing passive channel reading
+  (needs a persistent gateway connection). The old bot didn't do this
+  either — its main/alt list was entered by officers via slash commands.

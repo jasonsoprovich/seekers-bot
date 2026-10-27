@@ -10,16 +10,20 @@
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
-	// No route configured yet — deploys to the default workers.dev URL.
-	// Copy that URL into the Discord Developer Portal's "Interactions
-	// Endpoint URL" field (General Information tab) after the first deploy.
-	// A custom domain can be added later the same way seekers-tracker's is.
+	// Wrangler provisions the DNS record + certificate on deploy (the
+	// seekersofsouls.com zone is already on this account). Paste
+	// https://bot.seekersofsouls.com into the Discord Developer Portal's
+	// "Interactions Endpoint URL" after the first deploy.
+	"routes": [
+		{ "pattern": "bot.seekersofsouls.com", "custom_domain": true }
+	],
 	"d1_databases": [
 		{
 			// Same database as seekers-tracker (PLAN.md §8/§11 Phase 9) — this
 			// repo NEVER runs migrations against it (no migrations_dir here on
-			// purpose) and every query in src/ must be a read. Schema and
-			// migrations are owned solely by seekers-tracker.
+			// purpose) and every query goes through src/db.ts, which refuses
+			// anything but a SELECT. Schema and migrations are owned solely by
+			// seekers-tracker.
 			"binding": "DATABASE",
 			"database_name": "seekers-of-souls",
 			"database_id": "77583c9c-c654-4934-8782-ed4d1265771f"
@@ -29,9 +33,8 @@
 		"enabled": true
 	}
 	/**
-	 * Environment Variables / Secrets
-	 * DISCORD_PUBLIC_KEY is required at runtime to verify interaction
-	 * signatures — set via `wrangler secret put DISCORD_PUBLIC_KEY` for
-	 * production, `.dev.vars` locally. See README.md.
+	 * Secrets (set with `wrangler secret put <NAME>`, `.dev.vars` locally):
+	 *   DISCORD_PUBLIC_KEY, DISCORD_GUILD_ID, SEEKER_ROLE_ID, DENIED_ROLE_IDS
+	 * See README.md. Missing guild/role IDs fail closed (nobody can use it).
 	 */
 }

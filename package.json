@@ -8,7 +8,8 @@
     "deploy": "wrangler deploy",
     "register-commands": "tsx scripts/register-commands.ts",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "smoke": "tsx scripts/smoke.ts"
   },
   "dependencies": {
     "discord-interactions": "^4.4.0"
