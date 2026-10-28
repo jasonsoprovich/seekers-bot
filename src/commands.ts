@@ -29,31 +29,25 @@ const CLASS_CHOICES = [
   "Wizard",
 ].map((name) => ({ name, value: name }));
 
-export const LOOKUP_CHARACTERS_COMMAND = {
-  name: "lookup_characters",
-  description: "List a member's main, alts and mules from any one of their character names",
+// Discord can't mark "one of these two" as required, so both options are
+// optional and index.ts asks for one when neither is given.
+export const WHOIS_COMMAND = {
+  name: "whois",
+  description: "List a member's main, alts and mules from a character name or a Discord member",
   type: 1, // CHAT_INPUT
   options: [
     {
       name: "name",
-      description: "A character name (main, alt, or mule)",
+      description: "Any character name (main, alt, or mule)",
       type: STRING,
-      required: true,
+      required: false,
       autocomplete: true,
     },
-  ],
-} as const;
-
-export const WHOIS_COMMAND = {
-  name: "whois",
-  description: "List the characters linked to a Discord member",
-  type: 1,
-  options: [
     {
       name: "member",
-      description: "The Discord member to look up",
+      description: "A Discord member",
       type: USER,
-      required: true,
+      required: false,
     },
   ],
 } as const;
@@ -110,4 +104,4 @@ export const STANDINGS_COMMAND = {
   ],
 } as const;
 
-export const ALL_COMMANDS = [LOOKUP_CHARACTERS_COMMAND, WHOIS_COMMAND, PRIORITY_COMMAND, STANDINGS_COMMAND];
+export const ALL_COMMANDS = [WHOIS_COMMAND, PRIORITY_COMMAND, STANDINGS_COMMAND];

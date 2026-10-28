@@ -13,8 +13,7 @@ them) and ping nobody.
 
 | Command | What it shows |
 |---|---|
-| `/lookup_characters name:` | Every active character on that member's account (main first, then alts, then mules), from any one character name. Autocompletes. |
-| `/whois member:@user` | The same list, starting from a Discord member. |
+| `/whois name:` or `/whois member:@user` | Every active character on that member's account (main first, then alts, then mules), from any one character name (autocompletes) or from a Discord member. Give one or the other. |
 | `/priority [name:]` | EP, GP, loot priority and rank. Empty = your own account (matched by your Discord ID); otherwise any character name (an alt resolves to its account). |
 | `/standings [class:] [active:] [limit:]` | Priority standings, one row per account under its main. Defaults: all classes, raided in the last 30 days, top 20 (max 25). |
 

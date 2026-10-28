@@ -77,10 +77,8 @@ export default {
 
       try {
         switch (interaction.data?.name) {
-          case "lookup_characters":
-            return reply(await lookupCharacters(db, stringOption(interaction, "name")));
           case "whois":
-            return reply(await whois(db, stringOption(interaction, "member")));
+            return reply(await whois(db, stringOption(interaction, "name"), stringOption(interaction, "member")));
           case "priority":
             return reply(await priority(db, interaction));
           case "standings":
@@ -109,7 +107,11 @@ async function autocomplete(interaction: Interaction, db: ReadOnlyDb): Promise<s
   }
 }
 
-async function lookupCharacters(db: ReadOnlyDb, query: string): Promise<string> {
+async function whois(db: ReadOnlyDb, query: string, discordId: string): Promise<string> {
+  if (query && discordId) return "Pick either a character name or a member, not both.";
+  if (discordId) return whoisMember(db, discordId);
+  if (!query) return "Give a character name or pick a member.";
+
   const found = await findCharacter(db, query);
   if (found.kind === "not_found") return `No active character found matching **${clean(query)}**.`;
   if (found.kind === "ambiguous") return ambiguous(query, found.matches);
@@ -121,7 +123,7 @@ async function lookupCharacters(db: ReadOnlyDb, query: string): Promise<string> 
   return accountListing(db, found.playerId);
 }
 
-async function whois(db: ReadOnlyDb, discordId: string): Promise<string> {
+async function whoisMember(db: ReadOnlyDb, discordId: string): Promise<string> {
   if (!/^\d+$/.test(discordId)) return "Pick a member from the list.";
   const player = await findPlayerByDiscordId(db, discordId);
   if (!player) return `<@${discordId}> isn't connected to a member account on the website.`;

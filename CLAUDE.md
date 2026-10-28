@@ -67,6 +67,9 @@ setup/deploy steps; this file is decisions and gotchas.
   25-row length check. **Not yet** run against real Discord: needs the new
   Discord application (the old bot's app isn't ours), secrets, a deploy to
   `bot.seekersofsouls.com`, and command registration — see README.
+- **2026-10-28**: `/lookup_characters` merged into `/whois` (optional `name:`
+  or `member:`, exactly one). Registration is a bulk PUT, so re-registering
+  removes the old command from Discord.
 - Out of scope for a Worker: anything needing passive channel reading
   (needs a persistent gateway connection). The old bot didn't do this
   either — its main/alt list was entered by officers via slash commands.

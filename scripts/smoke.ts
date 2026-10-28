@@ -97,15 +97,15 @@ try {
   show("Seeker + Guest", await send(command("standings", [], { roles: [SEEKER, DENIED], user: { id: "42" } })));
   show("DM (no guild/member)", await send({ type: 2, user: { id: "42" }, data: { name: "standings" } }));
 
-  show("autocomplete 'Khr'", await send({ ...command("lookup_characters"), type: 4, data: { name: "lookup_characters", options: [{ name: "name", type: 3, value: "Khr", focused: true }] } }));
-  show("autocomplete denied", await send({ ...command("lookup_characters", [], { roles: [] }), type: 4, data: { name: "lookup_characters", options: [{ name: "name", type: 3, value: "K", focused: true }] } }));
+  show("autocomplete 'Khr'", await send({ ...command("whois"), type: 4, data: { name: "whois", options: [{ name: "name", type: 3, value: "Khr", focused: true }] } }));
+  show("autocomplete denied", await send({ ...command("whois", [], { roles: [] }), type: 4, data: { name: "whois", options: [{ name: "name", type: 3, value: "K", focused: true }] } }));
 
-  show("lookup Khrathak", await send(command("lookup_characters", [{ name: "name", type: 3, value: "khrathak" }])));
-  show("lookup alt Beguilez", await send(command("lookup_characters", [{ name: "name", type: 3, value: "Beguilez" }])));
-  show("lookup ambiguous 'ka'", await send(command("lookup_characters", [{ name: "name", type: 3, value: "ka" }])));
-  show("lookup nonsense + markdown", await send(command("lookup_characters", [{ name: "name", type: 3, value: "zz`**@everyone" }])));
-  show("lookup NoLooter (hidden)", await send(command("lookup_characters", [{ name: "name", type: 3, value: "NoLooter" }])));
-  show("lookup SQL-ish input", await send(command("lookup_characters", [{ name: "name", type: 3, value: "'; DROP TABLE characters; --" }])));
+  show("lookup Khrathak", await send(command("whois", [{ name: "name", type: 3, value: "khrathak" }])));
+  show("lookup alt Beguilez", await send(command("whois", [{ name: "name", type: 3, value: "Beguilez" }])));
+  show("lookup ambiguous 'ka'", await send(command("whois", [{ name: "name", type: 3, value: "ka" }])));
+  show("lookup nonsense + markdown", await send(command("whois", [{ name: "name", type: 3, value: "zz`**@everyone" }])));
+  show("lookup NoLooter (hidden)", await send(command("whois", [{ name: "name", type: 3, value: "NoLooter" }])));
+  show("lookup SQL-ish input", await send(command("whois", [{ name: "name", type: 3, value: "'; DROP TABLE characters; --" }])));
 
   show("priority Khrathak", await send(command("priority", [{ name: "name", type: 3, value: "Khrathak" }])));
   show("priority via alt", await send(command("priority", [{ name: "name", type: 3, value: "Beguilez" }])));
@@ -114,6 +114,8 @@ try {
 
   if (sample) show("whois linked member", await send(command("whois", [{ name: "member", type: 6, value: sample }])));
   show("whois unlinked member", await send(command("whois", [{ name: "member", type: 6, value: "42" }])));
+  show("whois neither option", await send(command("whois")));
+  show("whois both options", await send(command("whois", [{ name: "name", type: 3, value: "Khrathak" }, { name: "member", type: 6, value: "42" }])));
 
   show("standings default", await send(command("standings")));
   show("standings Enchanter, all, 5", await send(command("standings", [
